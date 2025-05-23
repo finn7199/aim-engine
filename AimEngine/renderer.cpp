@@ -194,11 +194,11 @@ void Renderer::BeginFrame() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void Renderer::DrawCube(const glm::mat4& model, const glm::mat4& view, const glm::mat4& projection) {
+void Renderer::DrawCube(const glm::mat4& model, const glm::mat4& view, const glm::mat4& projection, const glm::vec3& color) {
     glUseProgram(shaderProgram);
     glm::mat4 mvp = projection * view * model;
     glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "uMVP"), 1, GL_FALSE, glm::value_ptr(mvp));
-    glUniform3f(glGetUniformLocation(shaderProgram, "uColor"), 0.3f, 0.3f, 1.0f); // Example color for the cube
+    glUniform3f(glGetUniformLocation(shaderProgram, "uColor"), color.r, color.g, color.b); // Use passed color
     glBindVertexArray(cubeVAO);
     glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);

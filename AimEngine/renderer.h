@@ -5,7 +5,7 @@ class Renderer {
 public:
     void Init();
     void BeginFrame();
-    void DrawCube(const glm::mat4& model, const glm::mat4& view, const glm::mat4& projection);
+    void DrawCube(const glm::mat4& model, const glm::mat4& view, const glm::mat4& projection, const glm::vec3& color = glm::vec3(0.3f, 0.3f, 1.0f));
     void DrawSphere(const glm::mat4& model, const glm::mat4& view, const glm::mat4& projection);
     void EndFrame();
 

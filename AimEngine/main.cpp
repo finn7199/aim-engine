@@ -105,7 +105,12 @@ int main()
         // Draw the Cube (as ground)
         glm::mat4 groundModel = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.5f, 0.0f));
         groundModel = glm::scale(groundModel, glm::vec3(10.0f, 0.1f, 10.0f)); // Scale to a plane
-        renderer.DrawCube(groundModel, view, projection);
+        renderer.DrawCube(groundModel, view, projection, glm::vec3(0.3f, 0.3f, 1.0f));
+
+        // Draw a wall
+        glm::mat4 wallModel = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.75f, 5.0f));
+        wallModel = glm::scale(wallModel, glm::vec3(10.0f, 5.0f, 0.2f));
+        renderer.DrawCube(wallModel, view, projection, glm::vec3(0.8f, 0.2f, 0.2f)); // Red wall
 
         // Handle mouse click
         if (mouseLeftClick)
