@@ -44,6 +44,9 @@
     <ClInclude Include="shader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="stb_image.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\lighting.frag">
@@ -56,6 +59,18 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="Shaders\crosshair.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\skybox.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\skybox.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\equirectangular.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\equirectangular.vert">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

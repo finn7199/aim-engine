@@ -6,6 +6,8 @@
 #include "renderer.h"
 #include "camera.h"
 #include "target_manager.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 // Function declarations
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -39,6 +41,8 @@ float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 bool mouseLeftClick = false;
 bool spotLightEnabled = false;
+
+glm::vec3 g_lightDirection(-0.5f, -1.0f, -0.5f); //debug starting guess
 
 int main()
 {
@@ -85,6 +89,11 @@ int main()
         processInput(window);
         camera.ProcessKeyboard(keys, deltaTime);
 
+        // Set the viewport back to the screen size after the cubemap conversion
+        int display_w, display_h;
+        glfwGetFramebufferSize(window, &display_w, &display_h);
+        glViewport(0, 0, display_w, display_h);
+
         renderer.BeginFrame();
 
         renderer.SetViewPosition(camera.Position);
@@ -97,9 +106,10 @@ int main()
 
         glClearColor(0.1f, 0.15f, 0.3f, 1.0f); // Deep, muted navy
         glClear(GL_COLOR_BUFFER_BIT); // Fills the screen with the specified color
+
         // Directional light (sunlight)
         renderer.SetDirectionalLight(
-            glm::vec3(0.5f, -1.0f, -0.5f),  // Direction (slightly tilted for realism)
+            g_lightDirection,  // Direction (slightly tilted for realism) glm::vec3(-0.798228f, -0.412418f, -0.439026f);
             glm::vec3(0.6f, 0.6f, 0.6f),    // AMBIENT (bright ambient like real daylight)
             glm::vec3(1.5f, 1.5f, 1.3f),    // DIFFUSE (bright white with slight warmth)
             glm::vec3(1.2f, 1.2f, 1.2f)     // SPECULAR (strong highlights)
@@ -120,8 +130,10 @@ int main()
         );
         renderer.ToggleSpotLight(spotLightEnabled);
 
+        // Draw skybox first
         glm::mat4 view = camera.GetViewMatrix();
         glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        renderer.DrawSkybox(view, projection);
 
         // Draw targets
         renderer.SetMaterial(glm::vec3(0.2f, 0.0f, 0.0f), glm::vec3(0.8f, 0.1f, 0.1f), glm::vec3(0.5f), 32.0f);
@@ -220,6 +232,23 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
             if (key == GLFW_KEY_E) {
                 spotLightEnabled = !spotLightEnabled;
                 renderer.ToggleSpotLight(spotLightEnabled);
+            }
+
+            //  DEBUG LOGIC 
+            float step = 0.1f; // How much to change the vector by each key press
+            if (key == GLFW_KEY_KP_8) g_lightDirection.y += step; // Numpad 8: Y+
+            if (key == GLFW_KEY_KP_2) g_lightDirection.y -= step; // Numpad 2: Y-
+            if (key == GLFW_KEY_KP_4) g_lightDirection.x -= step; // Numpad 4: X-
+            if (key == GLFW_KEY_KP_6) g_lightDirection.x += step; // Numpad 6: X+
+            if (key == GLFW_KEY_KP_7) g_lightDirection.z += step; // Numpad 7: Z+
+            if (key == GLFW_KEY_KP_9) g_lightDirection.z -= step; // Numpad 9: Z-
+
+            if (key == GLFW_KEY_P) { // 'P' to Print
+                g_lightDirection = glm::normalize(g_lightDirection); // Normalize before printing
+                std::cout << "Final Light Direction: glm::vec3("
+                    << g_lightDirection.x << "f, "
+                    << g_lightDirection.y << "f, "
+                    << g_lightDirection.z << "f);" << std::endl;
             }
         }
         else if (action == GLFW_RELEASE) {
