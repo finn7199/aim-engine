@@ -7,18 +7,14 @@ public:
     std::vector<Target> targets;
 
     TargetManager(int count, float minX, float maxX, float minY, float maxY, float z, float radius) {
-        // First create all targets with empty existing list
-        for (int i = 0; i < count; ++i) {
-            targets.emplace_back(minX, maxX, minY, maxY, z, radius, std::vector<Target*>());
-        }
+        std::vector<Target*> existingTargets;
+        targets.reserve(count); // Reserve memory to avoid reallocations
 
-        // Then reset them with proper collision checking
-        std::vector<Target*> targetPtrs;
-        for (auto& target : targets) {
-            targetPtrs.push_back(&target);
-        }
-        for (auto& target : targets) {
-            target.Reset(minX, maxX, minY, maxY, z, targetPtrs);
+        for (int i = 0; i < count; ++i) {
+            // Create a new target, passing the list of already-created targets for collision checks
+            targets.emplace_back(minX, maxX, minY, maxY, z, radius, existingTargets);
+            // Add the new target's address to the list for the next iteration
+            existingTargets.push_back(&targets.back());
         }
     }
 

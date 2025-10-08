@@ -13,7 +13,6 @@ void processInput(GLFWwindow* window);
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
-glm::vec3 GetRayFromMouse(float mouseX, float mouseY, const glm::mat4& projection, const glm::mat4& view);
 
 // Screen dimensions
 const unsigned int SCR_WIDTH = 1920;
@@ -29,6 +28,8 @@ const float TARGET_RADIUS = 0.25f;
 const int TARGET_COUNT = 10;
 
 // Globals
+Renderer renderer;
+TargetManager targetManager(TARGET_COUNT, TARGET_MIN_X, TARGET_MAX_X, TARGET_MIN_Y, TARGET_MAX_Y, TARGET_Z, TARGET_RADIUS);
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 bool keys[1024];
 float lastX = SCR_WIDTH / 2.0f;
@@ -37,7 +38,7 @@ bool firstMouse = true;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 bool mouseLeftClick = false;
-TargetManager targetManager(TARGET_COUNT, TARGET_MIN_X, TARGET_MAX_X, TARGET_MIN_Y, TARGET_MAX_Y, TARGET_Z, TARGET_RADIUS);
+bool spotLightEnabled = false;
 
 int main()
 {
@@ -59,6 +60,7 @@ int main()
         return -1;
     }
     glfwMakeContextCurrent(window);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); //Makes mouse infinite, hides mouse thou. Add crosshair!!  
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetMouseButtonCallback(window, mouse_button_callback);
@@ -72,7 +74,6 @@ int main()
     }
 
     // Setup renderer
-    Renderer renderer;
     renderer.Init();
 
     // Main loop
@@ -81,16 +82,49 @@ int main()
         float currentFrame = (float)glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
-
         processInput(window);
         camera.ProcessKeyboard(keys, deltaTime);
 
         renderer.BeginFrame();
 
+        renderer.SetViewPosition(camera.Position);
+        //renderer.SetMaterial(
+        //    glm::vec3(0.7f, 0.7f, 0.7f),  // AMBIENT (high reflectivity)
+        //    glm::vec3(1.0f, 1.0f, 1.0f),  // DIFFUSE 
+        //    glm::vec3(0.8f, 0.8f, 0.8f),  // SPECULAR
+        //    64.0f                         // SHININESS (sharp reflections)
+        //);
+
+        glClearColor(0.1f, 0.15f, 0.3f, 1.0f); // Deep, muted navy
+        glClear(GL_COLOR_BUFFER_BIT); // Fills the screen with the specified color
+        // Directional light (sunlight)
+        renderer.SetDirectionalLight(
+            glm::vec3(0.5f, -1.0f, -0.5f),  // Direction (slightly tilted for realism)
+            glm::vec3(0.6f, 0.6f, 0.6f),    // AMBIENT (bright ambient like real daylight)
+            glm::vec3(1.5f, 1.5f, 1.3f),    // DIFFUSE (bright white with slight warmth)
+            glm::vec3(1.2f, 1.2f, 1.2f)     // SPECULAR (strong highlights)
+        );
+
+        // Spotlight (flashlight)
+        renderer.SetSpotLight(
+            camera.Position,
+            camera.Front,
+            glm::cos(glm::radians(12.5f)),  // cutOff
+            glm::cos(glm::radians(17.5f)),  // outerCutOff
+            glm::vec3(0.0f, 0.0f, 0.0f),    // ambient
+            glm::vec3(1.0f, 1.0f, 1.0f),    // diffuse
+            glm::vec3(1.0f, 1.0f, 1.0f),    // specular
+            1.0f,                           // constant
+            0.09f,                          // linear
+            0.032f                          // quadratic
+        );
+        renderer.ToggleSpotLight(spotLightEnabled);
+
         glm::mat4 view = camera.GetViewMatrix();
         glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 
         // Draw targets
+        renderer.SetMaterial(glm::vec3(0.2f, 0.0f, 0.0f), glm::vec3(0.8f, 0.1f, 0.1f), glm::vec3(0.5f), 32.0f);
         for (auto& target : targetManager.targets)
         {
             if (!target.hit)
@@ -102,24 +136,51 @@ int main()
             }
         }
 
-        // Draw the Cube (as ground)
-        glm::mat4 groundModel = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -1.5f, 0.0f));
-        groundModel = glm::scale(groundModel, glm::vec3(10.0f, 0.1f, 10.0f)); // Scale to a plane
-        renderer.DrawCube(groundModel, view, projection, glm::vec3(0.3f, 0.3f, 1.0f));
+        // --- Create the Room ---
+        // 1. Floor
+        glm::mat4 floorModel = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -2.0f, 0.0f));
+        floorModel = glm::scale(floorModel, glm::vec3(20.0f, 0.1f, 20.0f));
+        // Set a unique material for the floor before drawing
+        renderer.SetMaterial(glm::vec3(0.1f), glm::vec3(0.5, 0.5, 0.6), glm::vec3(0.2f), 16.0f);
+        renderer.DrawCube(floorModel, view, projection);
 
-        // Draw a wall
-        glm::mat4 wallModel = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.75f, 5.0f));
-        wallModel = glm::scale(wallModel, glm::vec3(10.0f, 5.0f, 0.2f));
-        renderer.DrawCube(wallModel, view, projection, glm::vec3(0.8f, 0.2f, 0.2f)); // Red wall
+
+        // 2. Back Wall (where targets appear)
+        glm::mat4 backWallModel = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 4.0f, -12.0f));
+        backWallModel = glm::scale(backWallModel, glm::vec3(20.0f, 12.0f, 0.2f));
+        // Set a unique material for the back wall
+        renderer.SetMaterial(glm::vec3(0.1f), glm::vec3(0.4, 0.4, 0.5), glm::vec3(0.5f), 32.0f);
+        renderer.DrawCube(backWallModel, view, projection);
+
+        // 3. Ceiling
+        glm::mat4 ceilingModel = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 10.0f, 0.0f));
+        ceilingModel = glm::scale(ceilingModel, glm::vec3(20.0f, 0.1f, 20.0f));
+        // Use the same material as the floor for consistency
+        renderer.SetMaterial(glm::vec3(0.1f), glm::vec3(0.5, 0.5, 0.6), glm::vec3(0.2f), 16.0f);
+        renderer.DrawCube(ceilingModel, view, projection);
+
+        // 4. Left Wall
+        glm::mat4 leftWallModel = glm::translate(glm::mat4(1.0f), glm::vec3(-10.0f, 4.0f, 0.0f));
+        leftWallModel = glm::scale(leftWallModel, glm::vec3(0.2f, 12.0f, 20.0f));
+        // Set a unique material for the side walls
+        renderer.SetMaterial(glm::vec3(0.1f), glm::vec3(0.6, 0.6, 0.6), glm::vec3(0.3f), 16.0f);
+        renderer.DrawCube(leftWallModel, view, projection);
+
+        // 5. Right Wall
+        glm::mat4 rightWallModel = glm::translate(glm::mat4(1.0f), glm::vec3(10.0f, 4.0f, 0.0f));
+        rightWallModel = glm::scale(rightWallModel, glm::vec3(0.2f, 12.0f, 20.0f));
+        // Use the same material as the left wall
+        renderer.SetMaterial(glm::vec3(0.1f), glm::vec3(0.6, 0.6, 0.6), glm::vec3(0.3f), 16.0f);
+        renderer.DrawCube(rightWallModel, view, projection);
+
+        renderer.DrawCrosshair();
 
         // Handle mouse click
         if (mouseLeftClick)
         {
             mouseLeftClick = false;
-
-            // Get ray from camera to mouse position
             glm::vec3 rayOrigin = camera.Position;
-            glm::vec3 rayDirection = GetRayFromMouse(lastX, lastY, projection, view);
+            glm::vec3 rayDirection = camera.Front; // The ray is the camera's forward direction
 
             // Check for hits
             if (targetManager.CheckHits(rayOrigin, rayDirection))
@@ -153,12 +214,17 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-    if (key >= 0 && key < 1024)
-    {
-        if (action == GLFW_PRESS)
+    if (key >= 0 && key < 1024) {
+        if (action == GLFW_PRESS) {
             keys[key] = true;
-        else if (action == GLFW_RELEASE)
+            if (key == GLFW_KEY_E) {
+                spotLightEnabled = !spotLightEnabled;
+                renderer.ToggleSpotLight(spotLightEnabled);
+            }
+        }
+        else if (action == GLFW_RELEASE) {
             keys[key] = false;
+        }
     }
 }
 
@@ -184,23 +250,5 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
     {
         mouseLeftClick = true;
     }
-}
-// Function to create a ray from mouse position
-glm::vec3 GetRayFromMouse(float mouseX, float mouseY, const glm::mat4& projection, const glm::mat4& view) {
-    // Convert mouse coordinates to normalized device coordinates
-    float x = (2.0f * mouseX) / SCR_WIDTH - 1.0f;
-    float y = 1.0f - (2.0f * mouseY) / SCR_HEIGHT;
-    float z = 1.0f;
-
-    // Create ray in clip space
-    glm::vec4 rayClip = glm::vec4(x, y, -1.0f, 1.0f);
-
-    // Convert to eye space
-    glm::vec4 rayEye = glm::inverse(projection) * rayClip;
-    rayEye = glm::vec4(rayEye.x, rayEye.y, -1.0f, 0.0f);
-
-    // Convert to world space
-    glm::vec3 rayWorld = glm::vec3(glm::inverse(view) * rayEye);
-    return glm::normalize(rayWorld);
 }
 

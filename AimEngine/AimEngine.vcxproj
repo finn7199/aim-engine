@@ -134,8 +134,15 @@
   <ItemGroup>
     <ClInclude Include="camera.h" />
     <ClInclude Include="renderer.h" />
+    <ClInclude Include="shader.h" />
     <ClInclude Include="target.h" />
     <ClInclude Include="target_manager.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\crosshair.frag" />
+    <None Include="Shaders\crosshair.vert" />
+    <None Include="Shaders\lighting.frag" />
+    <None Include="Shaders\lighting.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
