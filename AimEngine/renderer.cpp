@@ -8,7 +8,7 @@
 #include "stb_image.h"
 
 Renderer::~Renderer() {
-	delete lightingShader;
+	delete pbrShader;
 	delete crosshairShader;
 	delete skyboxShader;
 }
@@ -106,7 +106,7 @@ float skyboxVertices[] = {
 
 void Renderer::Init() {
 	// Compile shaders
-	lightingShader = new Shader("Shaders/lighting.vert", "Shaders/lighting.frag");
+	pbrShader = new Shader("Shaders/pbr.vert", "Shaders/pbr.frag");
 	crosshairShader = new Shader("Shaders/crosshair.vert", "Shaders/crosshair.frag");
 	skyboxShader = new Shader("Shaders/skybox.vert", "Shaders/skybox.frag");
 
@@ -309,20 +309,20 @@ void Renderer::BeginFrame() {
 }
 
 void Renderer::DrawCube(const glm::mat4& model, const glm::mat4& view, const glm::mat4& projection) {
-	lightingShader->use();
-	lightingShader->setMat4("uProjection", projection);
-	lightingShader->setMat4("uView", view);
-	lightingShader->setMat4("uModel", model);
+	pbrShader->use();
+	pbrShader->setMat4("uProjection", projection);
+	pbrShader->setMat4("uView", view);
+	pbrShader->setMat4("uModel", model);
 	glBindVertexArray(cubeVAO);
 	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0);
 }
 
 void Renderer::DrawSphere(const glm::mat4& model, const glm::mat4& view, const glm::mat4& projection) {
-	lightingShader->use();
-	lightingShader->setMat4("uProjection", projection);
-	lightingShader->setMat4("uView", view);
-	lightingShader->setMat4("uModel", model);
+	pbrShader->use();
+	pbrShader->setMat4("uProjection", projection);
+	pbrShader->setMat4("uView", view);
+	pbrShader->setMat4("uModel", model);
 	glBindVertexArray(sphereVAO);
 	glDrawArrays(GL_TRIANGLES, 0, sphereVerticesCount);
 	glBindVertexArray(0);
@@ -357,41 +357,37 @@ void Renderer::EndFrame() {
 }
 
 void Renderer::SetViewPosition(const glm::vec3& position) {
-	lightingShader->use();
-	lightingShader->setVec3("uViewPos", position);
+	pbrShader->use();
+	pbrShader->setVec3("uViewPos", position);
 }
 
-void Renderer::SetMaterial(const glm::vec3& ambient, const glm::vec3& diffuse, const glm::vec3& specular, float shininess) {
-	lightingShader->use();
-	lightingShader->setVec3("uMaterial.ambient", ambient);
-	lightingShader->setVec3("uMaterial.diffuse", diffuse);
-	lightingShader->setVec3("uMaterial.specular", specular);
-	lightingShader->setFloat("uMaterial.shininess", shininess);
+void Renderer::SetMaterial(const glm::vec3& albedo, float metallic, float roughness) {
+	pbrShader->use();
+	pbrShader->setVec3("uAlbedo", albedo);
+	pbrShader->setFloat("uMetallic", metallic);
+	pbrShader->setFloat("uRoughness", roughness);
+	pbrShader->setFloat("uAo", 1.0f); // use 1.0 for ambient occlusion for now
 }
 
-void Renderer::SetDirectionalLight(const glm::vec3& direction, const glm::vec3& ambient, const glm::vec3& diffuse, const glm::vec3& specular) {
-	lightingShader->use();
-	lightingShader->setVec3("uDirLight.direction", direction);
-	lightingShader->setVec3("uDirLight.ambient", ambient);
-	lightingShader->setVec3("uDirLight.diffuse", diffuse);
-	lightingShader->setVec3("uDirLight.specular", specular);
+void Renderer::SetDirectionalLight(const glm::vec3& direction, const glm::vec3& color) {
+	pbrShader->use();
+	pbrShader->setVec3("uDirLight.direction", direction);
+	pbrShader->setVec3("uDirLight.color", color);
 }
 
-void Renderer::SetSpotLight(const glm::vec3& position, const glm::vec3& direction, float cutOff, float outerCutOff, const glm::vec3& ambient, const glm::vec3& diffuse, const glm::vec3& specular, float constant, float linear, float quadratic) {
-	lightingShader->use();
-	lightingShader->setVec3("uSpotLight.position", position);
-	lightingShader->setVec3("uSpotLight.direction", direction);
-	lightingShader->setFloat("uSpotLight.cutOff", cutOff);
-	lightingShader->setFloat("uSpotLight.outerCutOff", outerCutOff);
-	lightingShader->setVec3("uSpotLight.ambient", ambient);
-	lightingShader->setVec3("uSpotLight.diffuse", diffuse);
-	lightingShader->setVec3("uSpotLight.specular", specular);
-	lightingShader->setFloat("uSpotLight.constant", constant);
-	lightingShader->setFloat("uSpotLight.linear", linear);
-	lightingShader->setFloat("uSpotLight.quadratic", quadratic);
+void Renderer::SetSpotLight(const glm::vec3& position, const glm::vec3& direction, const glm::vec3& color, float cutOff, float outerCutOff, float constant, float linear, float quadratic) {
+	pbrShader->use();
+	pbrShader->setVec3("uSpotLight.position", position);
+	pbrShader->setVec3("uSpotLight.direction", direction);
+	pbrShader->setVec3("uSpotLight.color", color);
+	pbrShader->setFloat("uSpotLight.cutOff", cutOff);
+	pbrShader->setFloat("uSpotLight.outerCutOff", outerCutOff);
+	pbrShader->setFloat("uSpotLight.constant", constant);
+	pbrShader->setFloat("uSpotLight.linear", linear);
+	pbrShader->setFloat("uSpotLight.quadratic", quadratic);
 }
 
 void Renderer::ToggleSpotLight(bool enabled) {
-	lightingShader->use();
-	lightingShader->setBool("uSpotLightEnabled", enabled);
+	pbrShader->use();
+	pbrShader->setBool("uSpotLightEnabled", enabled);
 }

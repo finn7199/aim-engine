@@ -110,20 +110,16 @@ int main()
         // Directional light (sunlight)
         renderer.SetDirectionalLight(
             g_lightDirection,  // Direction (slightly tilted for realism) glm::vec3(-0.798228f, -0.412418f, -0.439026f);
-            glm::vec3(0.6f, 0.6f, 0.6f),    // AMBIENT (bright ambient like real daylight)
-            glm::vec3(1.5f, 1.5f, 1.3f),    // DIFFUSE (bright white with slight warmth)
-            glm::vec3(1.2f, 1.2f, 1.2f)     // SPECULAR (strong highlights)
+            glm::vec3(5.0f, 5.0f, 5.0f) // higher value makes the light more intense.
         );
 
         // Spotlight (flashlight)
         renderer.SetSpotLight(
             camera.Position,
             camera.Front,
+            glm::vec3(10.0f, 10.0f, 10.0f), // A bright white flashlight color
             glm::cos(glm::radians(12.5f)),  // cutOff
             glm::cos(glm::radians(17.5f)),  // outerCutOff
-            glm::vec3(0.0f, 0.0f, 0.0f),    // ambient
-            glm::vec3(1.0f, 1.0f, 1.0f),    // diffuse
-            glm::vec3(1.0f, 1.0f, 1.0f),    // specular
             1.0f,                           // constant
             0.09f,                          // linear
             0.032f                          // quadratic
@@ -135,8 +131,8 @@ int main()
         glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
         renderer.DrawSkybox(view, projection);
 
-        // Draw targets
-        renderer.SetMaterial(glm::vec3(0.2f, 0.0f, 0.0f), glm::vec3(0.8f, 0.1f, 0.1f), glm::vec3(0.5f), 32.0f);
+        // Draw targets with a red, matte plastic material (albedo, metal, rough)
+        renderer.SetMaterial(glm::vec3(1.0f, 0.0f, 0.0f), 0.0f, 0.5f);
         for (auto& target : targetManager.targets)
         {
             if (!target.hit)
@@ -148,41 +144,35 @@ int main()
             }
         }
 
-        // --- Create the Room ---
+        // Create the Room
         // 1. Floor
         glm::mat4 floorModel = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -2.0f, 0.0f));
         floorModel = glm::scale(floorModel, glm::vec3(20.0f, 0.1f, 20.0f));
-        // Set a unique material for the floor before drawing
-        renderer.SetMaterial(glm::vec3(0.1f), glm::vec3(0.5, 0.5, 0.6), glm::vec3(0.2f), 16.0f);
+        renderer.SetMaterial(glm::vec3(0.2f, 0.2f, 0.25f), 0.0f, 0.8f);
         renderer.DrawCube(floorModel, view, projection);
-
 
         // 2. Back Wall (where targets appear)
         glm::mat4 backWallModel = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 4.0f, -12.0f));
         backWallModel = glm::scale(backWallModel, glm::vec3(20.0f, 12.0f, 0.2f));
-        // Set a unique material for the back wall
-        renderer.SetMaterial(glm::vec3(0.1f), glm::vec3(0.4, 0.4, 0.5), glm::vec3(0.5f), 32.0f);
+        renderer.SetMaterial(glm::vec3(0.15f, 0.15f, 0.18f), 0.0f, 0.9f);
         renderer.DrawCube(backWallModel, view, projection);
 
         // 3. Ceiling
         glm::mat4 ceilingModel = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 10.0f, 0.0f));
         ceilingModel = glm::scale(ceilingModel, glm::vec3(20.0f, 0.1f, 20.0f));
-        // Use the same material as the floor for consistency
-        renderer.SetMaterial(glm::vec3(0.1f), glm::vec3(0.5, 0.5, 0.6), glm::vec3(0.2f), 16.0f);
+        renderer.SetMaterial(glm::vec3(0.8f, 0.8f, 0.8f), 0.0f, 0.9f);
         renderer.DrawCube(ceilingModel, view, projection);
 
         // 4. Left Wall
         glm::mat4 leftWallModel = glm::translate(glm::mat4(1.0f), glm::vec3(-10.0f, 4.0f, 0.0f));
         leftWallModel = glm::scale(leftWallModel, glm::vec3(0.2f, 12.0f, 20.0f));
-        // Set a unique material for the side walls
-        renderer.SetMaterial(glm::vec3(0.1f), glm::vec3(0.6, 0.6, 0.6), glm::vec3(0.3f), 16.0f);
+        renderer.SetMaterial(glm::vec3(0.5f, 0.5f, 0.5f), 0.0f, 0.4f);
         renderer.DrawCube(leftWallModel, view, projection);
 
         // 5. Right Wall
         glm::mat4 rightWallModel = glm::translate(glm::mat4(1.0f), glm::vec3(10.0f, 4.0f, 0.0f));
         rightWallModel = glm::scale(rightWallModel, glm::vec3(0.2f, 12.0f, 20.0f));
-        // Use the same material as the left wall
-        renderer.SetMaterial(glm::vec3(0.1f), glm::vec3(0.6, 0.6, 0.6), glm::vec3(0.3f), 16.0f);
+        renderer.SetMaterial(glm::vec3(0.5f, 0.5f, 0.5f), 0.0f, 0.4f);
         renderer.DrawCube(rightWallModel, view, projection);
 
         renderer.DrawCrosshair();

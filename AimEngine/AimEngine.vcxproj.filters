@@ -49,12 +49,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\lighting.frag">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Shaders\lighting.vert">
-      <Filter>Shaders</Filter>
-    </None>
     <None Include="Shaders\crosshair.frag">
       <Filter>Shaders</Filter>
     </None>
@@ -71,6 +65,12 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="Shaders\equirectangular.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\pbr.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\pbr.vert">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

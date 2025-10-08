@@ -144,8 +144,8 @@
     <None Include="Shaders\crosshair.vert" />
     <None Include="Shaders\equirectangular.frag" />
     <None Include="Shaders\equirectangular.vert" />
-    <None Include="Shaders\lighting.frag" />
-    <None Include="Shaders\lighting.vert" />
+    <None Include="Shaders\pbr.frag" />
+    <None Include="Shaders\pbr.vert" />
     <None Include="Shaders\skybox.frag" />
     <None Include="Shaders\skybox.vert" />
   </ItemGroup>
