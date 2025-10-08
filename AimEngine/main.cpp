@@ -76,7 +76,6 @@ int main()
         std::cout << "Failed to initialize GLAD\n";
         return -1;
     }
-
     // Setup renderer
     renderer.Init();
 

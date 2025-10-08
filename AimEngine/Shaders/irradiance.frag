@@ -6,31 +6,57 @@ uniform samplerCube uEnvironmentMap;
 
 const float PI = 3.14159265359;
 
+float RadicalInverse_VdC(uint bits) 
+{
+    bits = (bits << 16u) | (bits >> 16u);
+    bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
+    bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
+    bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
+    bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
+    return float(bits) * 2.3283064365386963e-10; // / 0x100000000
+}
+
+vec2 Hammersley(uint i, uint N)
+{
+    return vec2(float(i)/float(N), RadicalInverse_VdC(i));
+}
+
 void main()
 {
     vec3 N = normalize(WorldPos);
     vec3 irradiance = vec3(0.0);
-    
-    // Trivial solution for now, a better one would be to use importance sampling
-    vec3 up    = vec3(0.0, 1.0, 0.0);
+
+    // Importance sampling cause why not  
+    // Create a coordinate system around the normal
+    vec3 up = vec3(0.0, 1.0, 0.0);
     vec3 right = normalize(cross(up, N));
-    up        = normalize(cross(N, right));
+    up = normalize(cross(N, right));
     
-    float sampleDelta = 0.025;
-    float nrSamples = 0.0;
-    for(float phi = 0.0; phi < 2.0 * PI; phi += sampleDelta)
+    const uint SAMPLE_COUNT = 1024u;
+    for(uint i = 0u; i < SAMPLE_COUNT; ++i)
     {
-        for(float theta = 0.0; theta < 0.5 * PI; theta += sampleDelta)
-        {
-            // Spherical to cartesian (in tangent space)
-            vec3 tangentSample = vec3(sin(theta) * cos(phi),  sin(theta) * sin(phi), cos(theta));
-            // Tangent space to world space
-            vec3 sampleVec = tangentSample.x * right + tangentSample.y * up + tangentSample.z * N; 
-            irradiance += texture(uEnvironmentMap, sampleVec).rgb * cos(theta) * sin(theta);
-            nrSamples++;
-        }
+        // Get 2 random numbers using the Hammersley sequence
+        vec2 Xi = Hammersley(i, SAMPLE_COUNT);
+        
+        // Use the random numbers to generate a sample direction with a cosine weighted distribution.
+        float phi = 2.0 * PI * Xi.x;
+        float cosTheta = sqrt(1.0 - Xi.y);
+        float sinTheta = sqrt(1.0 - cosTheta*cosTheta);
+        
+        // Convert from spherical to cartesian coordinates in tangent space
+        vec3 tangentSample;
+        tangentSample.x = cos(phi) * sinTheta;
+        tangentSample.y = sin(phi) * sinTheta;
+        tangentSample.z = cosTheta;
+        
+        // Convert from tangent space to world space
+        vec3 sampleVec = tangentSample.x * right + tangentSample.y * up + tangentSample.z * N;
+        
+        // Sample the environment map and add to the total
+        irradiance += texture(uEnvironmentMap, sampleVec).rgb;
     }
-    irradiance = PI * irradiance * (1.0 / float(nrSamples));
+    // Average the samples
+    irradiance = irradiance / float(SAMPLE_COUNT);
     
     FragColor = vec4(irradiance, 1.0);
 }

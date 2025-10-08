@@ -256,6 +256,7 @@ void Renderer::Init() {
 	}
 	else {
 		std::cout << "Failed to load HDR image." << std::endl;
+		return;
 	}
 
 	// 3. Create an empty cubemap texture to render to
