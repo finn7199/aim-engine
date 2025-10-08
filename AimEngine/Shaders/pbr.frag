@@ -34,6 +34,11 @@ uniform bool uSpotLightEnabled;
 
 uniform vec3 uViewPos;
 
+// IBL uniforms
+uniform samplerCube uIrradianceMap;
+uniform samplerCube uPrefilterMap;
+uniform sampler2D uBrdfLUT;
+
 const float PI = 3.14159265359;
 
 // PBR cook-torrance BRDF
@@ -99,42 +104,65 @@ vec3 calculatePBR(vec3 lightDir, vec3 lightColor, vec3 N, vec3 V, vec3 F0, vec3 
 }
 
 void main()
-{
+{		
+    // Basic vectors and material properties
     vec3 N = normalize(Normal);
     vec3 V = normalize(uViewPos - WorldPos);
-    vec3 F0 = vec3(0.04);
-    F0 = mix(F0, uAlbedo, uMetallic);
+    vec3 R = reflect(-V, N); 
 
-    // Sum the lighting from all sources
+    vec3 F0 = vec3(0.04); 
+    F0 = mix(F0, uAlbedo, uMetallic);
+    
+    // 1. DIRECT LIGHTING CALCULATION
+    // Initialize outgoing radiance from direct lights (sun, spotlight, etc.)
     vec3 Lo = vec3(0.0);
 
-    // 1. Directional Light
+    // Directional Light
     Lo += calculatePBR(normalize(-uDirLight.direction), uDirLight.color, N, V, F0, uAlbedo, uMetallic, uRoughness);
-
-    // 2. Spot Light
+    
+    // Spot Light
     if (uSpotLightEnabled) {
         vec3 lightDir = normalize(uSpotLight.position - WorldPos);
         
-        // Attenuation
         float distance = length(uSpotLight.position - WorldPos);
         float attenuation = 1.0 / (uSpotLight.constant + uSpotLight.linear * distance + uSpotLight.quadratic * (distance * distance));
         
-        // Spotlight intensity
         float theta = dot(lightDir, normalize(-uSpotLight.direction));
         float epsilon = uSpotLight.cutOff - uSpotLight.outerCutOff;
         float intensity = clamp((theta - uSpotLight.outerCutOff) / epsilon, 0.0, 1.0);
 
-        // Combine
         vec3 spotLightColor = uSpotLight.color * attenuation * intensity;
         Lo += calculatePBR(lightDir, spotLightColor, N, V, F0, uAlbedo, uMetallic, uRoughness);
     }
     
-    vec3 ambient = vec3(0.03) * uAlbedo * uAo;
-    vec3 color = ambient + Lo;
+    // 2. IBL CALCULATION
+    // Get the fresnel term for reflections
+    vec3 F = fresnelSchlick(max(dot(N, V), 0.0), F0);
+    
+    // Get ratios for diffuse and specular light
+    vec3 kS = F;
+    vec3 kD = 1.0 - kS;
+    kD *= 1.0 - uMetallic; // Non-metals have no diffuse component
+    
+    // Diffuse IBL
+    vec3 irradiance = texture(uIrradianceMap, N).rgb;
+    vec3 diffuse    = irradiance * uAlbedo;
+    
+    // Specular IBL
+    const float MAX_REFLECTION_LOD = 4.0; // Corresponds to number of mip levels in prefilter map
+    vec3 prefilteredColor = textureLod(uPrefilterMap, R,  uRoughness * MAX_REFLECTION_LOD).rgb;    
+    vec2 brdf  = texture(uBrdfLUT, vec2(max(dot(N, V), 0.0), uRoughness)).rg;
+    vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
+    
+    // Combine ambient IBL parts
+    vec3 ambient = (kD * diffuse + specular) * uAo;
+    
+    // 3. FINAL COMBINATION
+    vec3 color = ambient + Lo; // Add ambient and direct lighting
 
-    // HDR tonemapping & gamma correction
+    // HDR tonemapping and gamma correction
     color = color / (color + vec3(1.0));
-    color = pow(color, vec3(1.0/2.2));
+    color = pow(color, vec3(1.0/2.2)); 
 
     FragColor = vec4(color, 1.0);
 }

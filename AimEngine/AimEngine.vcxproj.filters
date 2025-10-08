@@ -73,5 +73,17 @@
     <None Include="Shaders\pbr.vert">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="Shaders\brdf.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\brdf.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\irradiance.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\prefilter.frag">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

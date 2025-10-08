@@ -140,12 +140,16 @@
     <ClInclude Include="target_manager.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Shaders\brdf.frag" />
+    <None Include="Shaders\brdf.vert" />
     <None Include="Shaders\crosshair.frag" />
     <None Include="Shaders\crosshair.vert" />
     <None Include="Shaders\equirectangular.frag" />
     <None Include="Shaders\equirectangular.vert" />
+    <None Include="Shaders\irradiance.frag" />
     <None Include="Shaders\pbr.frag" />
     <None Include="Shaders\pbr.vert" />
+    <None Include="Shaders\prefilter.frag" />
     <None Include="Shaders\skybox.frag" />
     <None Include="Shaders\skybox.vert" />
   </ItemGroup>

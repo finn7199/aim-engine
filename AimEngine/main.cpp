@@ -132,7 +132,7 @@ int main()
         renderer.DrawSkybox(view, projection);
 
         // Draw targets with a red, matte plastic material (albedo, metal, rough)
-        renderer.SetMaterial(glm::vec3(1.0f, 0.0f, 0.0f), 0.0f, 0.5f);
+        renderer.SetMaterial(glm::vec3(1.0f, 0.0f, 0.0f), 0.0f, 0.85f);
         for (auto& target : targetManager.targets)
         {
             if (!target.hit)

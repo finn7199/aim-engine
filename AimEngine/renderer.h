@@ -12,6 +12,7 @@ public:
     void DrawSphere(const glm::mat4& model, const glm::mat4& view, const glm::mat4& projection);
     void DrawCrosshair();
     void DrawSkybox(const glm::mat4& view, const glm::mat4& projection);
+    void RenderQuad();
     void EndFrame();
 
     void SetViewPosition(const glm::vec3& position);
@@ -33,4 +34,11 @@ private:
     Shader* skyboxShader;
     unsigned int cubemapTexture;
     unsigned int skyboxVAO, skyboxVBO;
+
+    // IBL textures
+    unsigned int irradianceMap;
+    unsigned int prefilterMap;
+    unsigned int brdfLUTTexture;
+
+    unsigned int quadVAO, quadVBO;
 };
