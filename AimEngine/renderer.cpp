@@ -412,6 +412,30 @@ void Renderer::Init() {
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+
+	// ------------------  Setup Cloth Buffers -----------------------
+	glGenVertexArrays(1, &clothVAO);
+	glGenBuffers(1, &clothVBO);
+	glGenBuffers(1, &clothNormalsVBO);
+	glGenBuffers(1, &clothEBO);
+
+	glBindVertexArray(clothVAO);
+
+	// Vertex Positions
+	glBindBuffer(GL_ARRAY_BUFFER, clothVBO);
+	// allocate a large buffer but don't fill it (nullptr). use GL_DYNAMIC_DRAW
+	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * 10000, nullptr, GL_DYNAMIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
+	// Vertex Normals
+	glBindBuffer(GL_ARRAY_BUFFER, clothNormalsVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * 10000, nullptr, GL_DYNAMIC_DRAW);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
+	// Indices  don't change, so use STATIC_DRAW
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, clothEBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * 20000, nullptr, GL_STATIC_DRAW);
+	glBindVertexArray(0);
 }
 
 void Renderer::BeginFrame() {
@@ -486,6 +510,25 @@ void Renderer::DrawSkybox(const glm::mat4& view, const glm::mat4& projection) {
 	glDepthFunc(GL_LESS); // Set depth function back to default
 }
 
+void Renderer::DrawCloth(const std::vector<glm::vec3>& vertices, const std::vector<glm::vec3>& normals, const std::vector<unsigned int>& indices, const glm::mat4& model, const glm::mat4& view, const glm::mat4& projection)
+{
+	pbrShader->use();
+	pbrShader->setMat4("uProjection", projection);
+	pbrShader->setMat4("uView", view);
+	pbrShader->setMat4("uModel", model);
+
+	glBindVertexArray(clothVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, clothVBO);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, vertices.size() * sizeof(glm::vec3), vertices.data()); // Update the vertex position data
+	glBindBuffer(GL_ARRAY_BUFFER, clothNormalsVBO); // Update the normal data
+	glBufferSubData(GL_ARRAY_BUFFER, 0, normals.size() * sizeof(glm::vec3), normals.data());
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, clothEBO); // Update the index data
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
+
+	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
+}
+
 void Renderer::RenderQuad()
 {
 	glBindVertexArray(quadVAO);
@@ -508,6 +551,7 @@ void Renderer::SetMaterial(const glm::vec3& albedo, float metallic, float roughn
 	pbrShader->setFloat("uMetallic", metallic);
 	pbrShader->setFloat("uRoughness", roughness);
 	pbrShader->setFloat("uAo", 1.0f); // use 1.0 for ambient occlusion for now
+	// DONT FORGET TO ADD SSAO later
 }
 
 void Renderer::SetDirectionalLight(const glm::vec3& direction, const glm::vec3& color) {

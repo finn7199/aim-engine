@@ -6,6 +6,7 @@
 #include "renderer.h"
 #include "camera.h"
 #include "target_manager.h"
+#include "cloth.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
@@ -41,8 +42,39 @@ float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 bool mouseLeftClick = false;
 bool spotLightEnabled = false;
+Cloth cloth(2.0f, 3.0f, 25, 25); // 2x3 meter cloth with 25x25 particles
 
 glm::vec3 g_lightDirection(-0.5f, -1.0f, -0.5f); //debug starting guess
+
+// Möller-Trumbore intersection algorithm to check if ray hits a triangle
+bool rayTriangleIntersect(const glm::vec3& rayOrigin, const glm::vec3& rayDirection, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2, float& outDistance)
+{
+    const float EPSILON = 0.0000001f;
+    glm::vec3 edge1 = v1 - v0;
+    glm::vec3 edge2 = v2 - v0;
+    glm::vec3 h = glm::cross(rayDirection, edge2);
+    float a = glm::dot(edge1, h);
+    if (a > -EPSILON && a < EPSILON)
+        return false; // Ray is parallel to the triangle.
+    float f = 1.0f / a;
+    glm::vec3 s = rayOrigin - v0;
+    float u = f * glm::dot(s, h);
+    if (u < 0.0f || u > 1.0f)
+        return false;
+    glm::vec3 q = glm::cross(s, edge1);
+    float v = f * glm::dot(rayDirection, q);
+    if (v < 0.0f || u + v > 1.0f)
+        return false;
+    // At this stage we can compute t to find out where the intersection point is on the line.
+    float t = f * glm::dot(edge2, q);
+    if (t > EPSILON) // Ray intersection
+    {
+        outDistance = t;
+        return true;
+    }
+    else // This means that there is a line intersection but not a ray intersection.
+        return false;
+}
 
 int main()
 {
@@ -79,6 +111,9 @@ int main()
     // Setup renderer
     renderer.Init();
 
+    float fixedDeltaTime = 1.0f / 120.0f; // fixed timestep at 120Hz
+    float accumulator = 0.0f;
+
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
@@ -92,6 +127,14 @@ int main()
         int display_w, display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
         glViewport(0, 0, display_w, display_h);
+
+        // update cloth physics with fixed timestep
+        accumulator += deltaTime;
+        while (accumulator >= fixedDeltaTime)
+        {
+            cloth.update(fixedDeltaTime);
+            accumulator -= fixedDeltaTime;
+        }
 
         renderer.BeginFrame();
 
@@ -174,6 +217,12 @@ int main()
         renderer.SetMaterial(glm::vec3(0.5f, 0.5f, 0.5f), 0.0f, 0.4f);
         renderer.DrawCube(rightWallModel, view, projection);
 
+        // Draw the cloth
+        renderer.SetMaterial(glm::vec3(0.8f, 0.3f, 0.2f), 0.0f, 0.7f); //
+        glm::mat4 clothModel = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 2.0f, 5.0f));
+        clothModel = glm::rotate(clothModel, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        renderer.DrawCloth(cloth.getVertexPositions(), cloth.getNormals(), cloth.getIndices(), clothModel, view, projection);
+
         renderer.DrawCrosshair();
 
         // Handle mouse click
@@ -187,6 +236,39 @@ int main()
             if (targetManager.CheckHits(rayOrigin, rayDirection))
             {
                 targetManager.ResetHitTargets(TARGET_MIN_X, TARGET_MAX_X, TARGET_MIN_Y, TARGET_MAX_Y, TARGET_Z);
+            }
+
+            // Check for cloth hits
+            float closestHit = FLT_MAX;
+            glm::vec3 finalHitPoint;
+            // cloth model matrix to transform its vertices into world space
+            glm::mat4 clothModel = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 2.0f, 5.0f));
+            clothModel = glm::rotate(clothModel, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+            const auto& clothVerts = cloth.getVertexPositions();
+            const auto& clothIndices = cloth.getIndices();
+
+            for (size_t i = 0; i < clothIndices.size(); i += 3) {
+                // tranform vertices from local to world space
+                glm::vec3 v0 = clothModel * glm::vec4(clothVerts[clothIndices[i]], 1.0f);
+                glm::vec3 v1 = clothModel * glm::vec4(clothVerts[clothIndices[i + 1]], 1.0f);
+                glm::vec3 v2 = clothModel * glm::vec4(clothVerts[clothIndices[i + 2]], 1.0f);
+
+                float dist;
+                if (rayTriangleIntersect(rayOrigin, rayDirection, v0, v1, v2, dist)) {
+                    if (dist < closestHit) {
+                        closestHit = dist;
+                    }
+                }
+            }
+
+            if (closestHit < FLT_MAX) {
+                //std::cout << "SUCCESS: Raycast hit the cloth at distance: " << closestHit << std::endl;
+                glm::vec3 hitPoint = rayOrigin + rayDirection * closestHit;
+                glm::vec3 force = rayDirection * 5.0f;
+                // apply the force in cloth local space, so transform the hit point back from world to local
+                glm::vec3 localHitPoint = glm::inverse(clothModel) * glm::vec4(hitPoint, 1.0f);
+                cloth.applyForceToPoint(localHitPoint, 0.1f, force);
             }
         }
 

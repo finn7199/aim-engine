@@ -1,6 +1,7 @@
 #pragma once
 #include <glm/glm.hpp>
-#include "shader.h" 
+#include <vector>
+#include "shader.h"
 
 class Renderer {
 public:
@@ -12,6 +13,7 @@ public:
     void DrawSphere(const glm::mat4& model, const glm::mat4& view, const glm::mat4& projection);
     void DrawCrosshair();
     void DrawSkybox(const glm::mat4& view, const glm::mat4& projection);
+    void DrawCloth(const std::vector<glm::vec3>& vertices, const std::vector<glm::vec3>& normals, const std::vector<unsigned int>& indices, const glm::mat4& model, const glm::mat4& view, const glm::mat4& projection);
     void RenderQuad();
     void EndFrame();
 
@@ -41,4 +43,6 @@ private:
     unsigned int brdfLUTTexture;
 
     unsigned int quadVAO, quadVBO;
+
+    unsigned int clothVAO, clothVBO, clothNormalsVBO, clothEBO;  // buffers for cloth
 };
