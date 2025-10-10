@@ -42,8 +42,7 @@ float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 bool mouseLeftClick = false;
 bool spotLightEnabled = false;
-Cloth cloth(2.0f, 3.0f, 25, 25); // 2x3 meter cloth with 25x25 particles
-
+Cloth cloth(2.0f, 3.0f, 10, 10); // 2x3 meter cloth with 10x10 particles
 glm::vec3 g_lightDirection(-0.5f, -1.0f, -0.5f); //debug starting guess
 
 // Möller-Trumbore intersection algorithm to check if ray hits a triangle
@@ -111,7 +110,7 @@ int main()
     // Setup renderer
     renderer.Init();
 
-    float fixedDeltaTime = 1.0f / 120.0f; // fixed timestep at 120Hz
+    float fixedDeltaTime = 1.0f / 120.0f; // fixed timestep at n Hz
     float accumulator = 0.0f;
 
     // Main loop
@@ -139,12 +138,6 @@ int main()
         renderer.BeginFrame();
 
         renderer.SetViewPosition(camera.Position);
-        //renderer.SetMaterial(
-        //    glm::vec3(0.7f, 0.7f, 0.7f),  // AMBIENT (high reflectivity)
-        //    glm::vec3(1.0f, 1.0f, 1.0f),  // DIFFUSE 
-        //    glm::vec3(0.8f, 0.8f, 0.8f),  // SPECULAR
-        //    64.0f                         // SHININESS (sharp reflections)
-        //);
 
         glClearColor(0.1f, 0.15f, 0.3f, 1.0f); // Deep, muted navy
         glClear(GL_COLOR_BUFFER_BIT); // Fills the screen with the specified color

@@ -1,6 +1,8 @@
 #pragma once
 #include <vector>
 #include <glm/glm.hpp>
+#include <unordered_map>
+#include "spatialhash.h"
 
 struct Particle {
     bool isFixed = false;
@@ -8,13 +10,17 @@ struct Particle {
     glm::vec3 position;
     glm::vec3 oldPosition;
     //glm::vec3 acceleration;
+
+    // trust region collition check
+    glm::vec3 positionBeforeUpdate;
+    float conservativeBound;
 };
 
 struct Spring {
     Particle* p1;
     Particle* p2;
     float restLength;
-    float stiffness = 800.0f; // how strong the spring is
+    float stiffness = 200.0f; // how strong the spring is
 };
 
 class Cloth {
@@ -41,4 +47,8 @@ private:
     std::vector<glm::vec3> vertexPositions;
     std::vector<glm::vec3> normals;
     std::vector<unsigned int> indices;
+
+    // Spatial hashing
+    SpatialHash spatialHash;
+    void updateSpatialHash();
 };

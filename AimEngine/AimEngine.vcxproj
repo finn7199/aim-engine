@@ -131,12 +131,14 @@
     <ClCompile Include="cloth.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="renderer.cpp" />
+    <ClCompile Include="spatialhash.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="camera.h" />
     <ClInclude Include="cloth.h" />
     <ClInclude Include="renderer.h" />
     <ClInclude Include="shader.h" />
+    <ClInclude Include="spatialhash.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="target.h" />
     <ClInclude Include="target_manager.h" />
