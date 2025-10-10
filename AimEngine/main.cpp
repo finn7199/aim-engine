@@ -45,7 +45,7 @@ bool spotLightEnabled = false;
 Cloth cloth(2.0f, 3.0f, 10, 10); // 2x3 meter cloth with 10x10 particles
 glm::vec3 g_lightDirection(-0.5f, -1.0f, -0.5f); //debug starting guess
 
-// Möller-Trumbore intersection algorithm to check if ray hits a triangle
+// Moller-Trumbore intersection algorithm to check if ray hits a triangle
 bool rayTriangleIntersect(const glm::vec3& rayOrigin, const glm::vec3& rayDirection, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2, float& outDistance)
 {
     const float EPSILON = 0.0000001f;
