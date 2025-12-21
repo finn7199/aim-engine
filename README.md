@@ -5,7 +5,7 @@ This project goes beyond basic rendering to deliver realistic materials, lightin
 
 ---
 
-## 🖼️ Screenshots
+## Screenshots
 
 <div style="display: flex; align-items: flex-start; gap: 10px;">
   <img src="AimEngine/Media/Screenshot1.png" width="500" />
@@ -14,7 +14,7 @@ This project goes beyond basic rendering to deliver realistic materials, lightin
 
 ---
 
-## ✨ Core Features
+## Core Features
 
 - **Real-time 3D Rendering** using modern OpenGL.  
 - **Physically-Based Rendering (PBR)** for realistic material definition.  
@@ -29,7 +29,7 @@ This project goes beyond basic rendering to deliver realistic materials, lightin
  
 ---
 
-## 🧵 Extra Features: OGC Cloth Physics (Cloth-Physics Branch)
+## Extra Features: OGC Cloth Physics (Cloth-Physics Branch)
 
 This project implements a **mass-spring system for cloth simulation**, enhanced with a **self-collision model** inspired by the SIGGRAPH 2025 paper *"Offset Geometric Contact"* (Chen et al., 2025). It leverages a **spatial hash grid** as a high-performance acceleration structure to make advanced collision checks feasible in real-time.
 
@@ -49,11 +49,11 @@ Instead of reacting to collisions after they happen, the simulation is **proacti
 - **Local Bounds:** Each particle's safety bubble is calculated independently, maintaining the local nature of the algorithm.  
 - **Parallelism:** CPU parallelization (`#pragma omp parallel for`) is used to speed up bound calculations, reflecting the algorithm’s massively parallel potential.
 
-> ⚠️ **Note:** This project is currently maintained in the [`cloth-physics`](https://github.com/finn7199/aim-engine/tree/cloth-simulation) branch and is **not merged into `main`**. You can explore it by checking out that branch.
+> **Note:** This project is currently maintained in the [`cloth-physics`](https://github.com/finn7199/aim-engine/tree/cloth-simulation) branch and is **not merged into `main`**. You can explore it by checking out that branch.
 
 ---
 
-## 🎮 Controls
+## Controls
 
 | Key / Action | Description |
 |---------------|-------------|
@@ -65,7 +65,7 @@ Instead of reacting to collisions after they happen, the simulation is **proacti
 
 ---
 
-## 🚀 Future Work
+## Future Work
 
 - Implement a scoring system and timed game modes  
 - Load textured PBR materials (albedo, normal, roughness maps)  
@@ -76,7 +76,7 @@ Instead of reacting to collisions after they happen, the simulation is **proacti
 
 ---
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - **HDR Skybox** by [Poly Haven](https://polyhaven.com)
 
